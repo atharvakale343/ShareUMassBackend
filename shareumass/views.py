@@ -34,7 +34,9 @@ def index(request):
 def callback(request):
     token = oauth.auth0.authorize_access_token(request)
     request.session["user"] = token
-    return redirect(f"{settings.FRONTEND_SERVICE_URL}?token={token['id_token']}")
+
+    # TODO: generate UID after creating user object (if not exists) and return primary id
+    return redirect(f"{settings.FRONTEND_SERVICE_URL}?token={token['id_token']}&uid={1}")
 
 
 def login(request):
