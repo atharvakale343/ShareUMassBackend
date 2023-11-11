@@ -4,6 +4,8 @@ from django.conf import settings
 from django.shortcuts import redirect, render, redirect
 from django.urls import reverse
 from urllib.parse import quote_plus, urlencode
+from .authorization import RequestToken, authorized, can, getRequestToken
+from django.http import HttpRequest, JsonResponse
 
 oauth = OAuth()
 
@@ -19,7 +21,6 @@ oauth.register(
 
 
 def index(request):
-
     return render(
         request,
         "index.html",
@@ -37,9 +38,7 @@ def callback(request):
 
 
 def login(request):
-    return oauth.auth0.authorize_redirect(
-        request, request.build_absolute_uri(reverse("callback"))
-    )
+    return oauth.auth0.authorize_redirect(request, request.build_absolute_uri(reverse("callback")))
 
 
 def logout(request):
@@ -54,4 +53,35 @@ def logout(request):
             },
             quote_via=quote_plus,
         ),
+    )
+
+
+def public(request: HttpRequest()) -> JsonResponse:
+    token: RequestToken | dict = getRequestToken(request)
+
+    return JsonResponse(
+        data={
+            "message": "Hello from a public endpoint! You don't need to be authenticated to see this.",
+            "token": token.dict(),
+        }
+    )
+
+
+@authorized
+def private(request: HttpRequest, token: RequestToken) -> JsonResponse:
+    return JsonResponse(
+        data={
+            "message": "Hello from a private endpoint! You need to be authenticated to see this.",
+            "token": token.dict(),
+        }
+    )
+
+
+@can("read:messages")
+def privateScoped(request: HttpRequest, token: RequestToken) -> JsonResponse:
+    return JsonResponse(
+        data={
+            "message": "Hello from a private endpoint! You need to be authenticated and have a scope of read:messages to see this.",
+            "token": token.dict(),
+        }
     )
