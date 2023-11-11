@@ -34,21 +34,22 @@ def index(request):
 def callback(request):
     token = oauth.auth0.authorize_access_token(request)
     request.session["user"] = token
-    return redirect(request.build_absolute_uri(reverse("index")))
+    return redirect(f"{settings.FRONTEND_SERVICE_URL}?token={token['id_token']}")
 
 
 def login(request):
-    return oauth.auth0.authorize_redirect(request, request.build_absolute_uri(reverse("callback")))
+    return oauth.auth0.authorize_redirect(
+        request, request.build_absolute_uri(reverse("callback"))
+    )
 
 
 def logout(request):
     request.session.clear()
-
     return redirect(
         f"https://{settings.AUTH0_DOMAIN}/v2/logout?"
         + urlencode(
             {
-                "returnTo": request.build_absolute_uri(reverse("index")),
+                "returnTo": settings.FRONTEND_SERVICE_URL,
                 "client_id": settings.AUTH0_CLIENT_ID,
             },
             quote_via=quote_plus,
@@ -57,12 +58,12 @@ def logout(request):
 
 
 def public(request: HttpRequest()) -> JsonResponse:
-    token: RequestToken | dict = getRequestToken(request)
+    token: RequestToken | None = getRequestToken(request)
 
     return JsonResponse(
         data={
             "message": "Hello from a public endpoint! You don't need to be authenticated to see this.",
-            "token": token.dict(),
+            "token": token.dict() if token is not None else None,
         }
     )
 
