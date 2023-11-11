@@ -4,6 +4,8 @@ from django.conf import settings
 from django.shortcuts import redirect, render, redirect
 from django.urls import reverse
 from urllib.parse import quote_plus, urlencode
+
+from shareumass.utils import create_user_if_not_exists
 from .authorization import RequestToken, authorized, can, getRequestToken
 from django.http import HttpRequest, JsonResponse
 
@@ -35,14 +37,13 @@ def callback(request):
     token = oauth.auth0.authorize_access_token(request)
     request.session["user"] = token
 
-    # TODO: generate UID after creating user object (if not exists) and return primary id
-    return redirect(f"{settings.FRONTEND_SERVICE_URL}?token={token['id_token']}&uid={1}")
+    email = token["email"]
+    create_user_if_not_exists(token)
+    return redirect(f"{settings.FRONTEND_SERVICE_URL}?token={token['id_token']}&email={email}")
 
 
 def login(request):
-    return oauth.auth0.authorize_redirect(
-        request, request.build_absolute_uri(reverse("callback"))
-    )
+    return oauth.auth0.authorize_redirect(request, request.build_absolute_uri(reverse("callback")))
 
 
 def logout(request):
