@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
+import mongoengine
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -67,6 +68,9 @@ WSGI_APPLICATION = "shareumass.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+MONGO_HOST = "mongodb+srv://lifewhiz:strongpass@cluster0.txfh8kh.mongodb.net/?retryWrites=true&w=majority"
+
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -79,12 +83,14 @@ DATABASES = {
         "ENGINE": "djongo",
         "NAME": "images_data",
         "ENFORCE_SCHEMA": False,
-        "CLIENT": {
-            "host": "mongodb+srv://lifewhiz:strongpass@cluster0.txfh8kh.mongodb.net/?retryWrites=true&w=majority"
-        },
+        "CLIENT": {"host": MONGO_HOST},
     },
 }
 
+mongoengine.connect(
+    "images_data",
+    host=MONGO_HOST,
+)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

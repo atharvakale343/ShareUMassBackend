@@ -24,12 +24,18 @@ def process_image_to_db(posting_id: int, image_data: str):
 def put_image_in_db(posting_id: int, image_data: str):
     format, img_str = image_data.split(";base64,")
     ext = format.split("/")[-1]
+
     store_data = ContentFile(base64.b64decode(img_str), name="img." + ext)
-    img = Image(posting_id=posting_id, image_data=store_data)
-    img.save(using="images")
+
+    img = Image()
+    img.posting_id = posting_id
+    img.image_data.put(store_data)
+
+    img.save()
     return img
 
 
 def get_image_from_db(posting_id: int):
-    return Image.objects.filter(posting_id=posting_id).using("images").first().image_data
-
+    return (
+        Image.objects(posting_id=posting_id).using("images").first().image_data.read()
+    )

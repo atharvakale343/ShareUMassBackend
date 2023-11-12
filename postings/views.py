@@ -1,5 +1,5 @@
 from django.db import IntegrityError
-from image.views import process_image_to_db
+from image.views import process_image_to_db, get_image_from_db
 from postings.models import Posting
 from shareumass.authorization import RequestToken, authorized, authorized_view
 from shareumass.utils import get_session_from_session_token
@@ -77,12 +77,17 @@ class UserPosting(APIView):
         if not success:
             return error_json
 
-        success, error_json, image = process_image_to_db(posting_id=posting.id, image_data=params["image"])
+        success, error_json, image = process_image_to_db(
+            posting_id=posting.id, image_data=params["image"]
+        )
         if not success:
             posting.delete()
             return error_json
 
-        response = {"message": "posting successfully created", "posting": model_to_dict(posting)}
+        response = {
+            "message": "posting successfully created",
+            "posting": model_to_dict(posting),
+        }
         return JsonResponse(
             response,
             status=200,
@@ -90,12 +95,12 @@ class UserPosting(APIView):
 
 
 class PostingsView(APIView):
-    @authorized_view
-    def get(self, request: HttpRequest, token: RequestToken) -> JsonResponse:
-        session_token = str(token)
-        success, error_json, account = get_session_from_session_token(session_token)
-        if not success:
-            return error_json
+    # @authorized_view
+    def get(self, request: HttpRequest):  # , token: RequestToken) -> JsonResponse:
+        # session_token = str(token)
+        # success, error_json, account = get_session_from_session_token(session_token)
+        # if not success:
+        #     return error_json
 
         params = request.GET
 
@@ -111,7 +116,9 @@ class PostingsView(APIView):
         if query_text:
             search_vector_keys.extend(["product_name", "description"])
 
-        search_query_values = [value for key, value in search_params.items() if search_params[key]]
+        search_query_values = [
+            value for key, value in search_params.items() if search_params[key]
+        ]
         if query_text:
             search_query_values.append(query_text)
 
@@ -125,7 +132,9 @@ class PostingsView(APIView):
             for value in search_query_values:
                 query = query & SearchQuery(value)
 
-            search_postings = search_postings.annotate(rank=SearchRank(vector, query)).order_by("-rank")
+            search_postings = search_postings.annotate(
+                rank=SearchRank(vector, query)
+            ).order_by("-rank")
 
         if user_flag:
             search_postings = search_postings.filter(account=account)
@@ -133,7 +142,10 @@ class PostingsView(APIView):
         return JsonResponse(
             data={
                 "message": "retrieved postings for logged in user",
-                "postings": [model_to_dict(result) for result in search_postings],
+                "postings": [
+                    model_to_dict(result) | {"picture": get_image_from_db(result.id)}
+                    for result in search_postings
+                ],
             },
             status=200,
         )

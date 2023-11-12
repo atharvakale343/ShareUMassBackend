@@ -1,6 +1,7 @@
 from django.db import models
+from mongoengine import Document, FileField, IntField
 
 
-class Image(models.Model):
-    posting_id = models.IntegerField()
-    image_data = models.FileField()
+class Image(Document):
+    posting_id = IntField()
+    image_data = FileField()
