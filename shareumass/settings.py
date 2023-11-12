@@ -74,9 +74,9 @@ MONGO_HOST = "mongodb+srv://lifewhiz:strongpass@cluster0.txfh8kh.mongodb.net/?re
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "django",
+        "NAME": os.getenv("DB_NAME", "django"),
         "USER": "postgres",
-        "HOST": "localhost",
+        "HOST": os.getenv("DB_HOST", "localhost"),
         "PASSWORD": os.getenv("PGPASSWORD", "mypass"),
     },
     "images": {

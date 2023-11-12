@@ -11,14 +11,15 @@ services:
     links:
       - db
     environment:
-      - DB_TYPE=postgres
       - DB_HOST=db
+      - DB_NAME=postgres
   db:
-    image: postgres:13
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    image: postgres:latest
     environment:
-      - "POSTGRES_HOST_AUTH_METHOD=trust"
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mypass
+    ports:
+      - 5432:5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
