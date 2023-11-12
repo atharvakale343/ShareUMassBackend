@@ -106,12 +106,12 @@ class PostingsView(APIView):
 
         search_postings = Posting.objects.all()
 
-        if "residentialHall" in params:
+        if "residentialHall" in params and params["residentialHall"]:
             search_postings = search_postings.filter(
                 residential_hall__icontains=params.get("residentialHall")
             )
 
-        if "categories" in params:
+        if "categories" in params and params["categories"]:
             search_postings = search_postings.filter(categories__overlap=params.get("categories"))
 
         if query_text:
