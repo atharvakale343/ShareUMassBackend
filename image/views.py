@@ -5,7 +5,7 @@ from image.models import Image
 import base64
 
 
-def process_image_to_db(posting_id: int, image_data: str):
+def process_image_to_db(posting_id: int, image_data):
     success, error_json, image = True, None, None
     try:
         image = put_image_in_db(posting_id, image_data)
@@ -21,15 +21,21 @@ def process_image_to_db(posting_id: int, image_data: str):
     return success, error_json, image
 
 
-def put_image_in_db(posting_id: int, image_data: str):
-    format, img_str = image_data.split(";base64,")
-    ext = format.split("/")[-1]
-    store_data = ContentFile(base64.b64decode(img_str), name="img." + ext)
-    img = Image(posting_id=posting_id, image_data=store_data)
-    img.save(using="images")
+def put_image_in_db(posting_id: int, image_data):
+    bytes_data = image_data.read()
+    decoded_data = ContentFile(bytes_data)
+
+    img = Image()
+    img.posting_id = posting_id
+    img.image_data.put(decoded_data)
+
+    img.save()
     return img
 
 
 def get_image_from_db(posting_id: int):
-    return Image.objects.filter(posting_id=posting_id).using("images").first().image_data
-
+    image = Image.objects(posting_id=posting_id).first()
+    if image:
+        return base64.b64encode(image.image_data.read()).decode("utf-8")
+    else:
+        return ""

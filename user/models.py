@@ -12,4 +12,4 @@ class Account(models.Model):
 
 class SessionAccount(models.Model):
     account = models.ForeignKey(to="Account", on_delete=models.CASCADE, null=False)
-    session_token = models.CharField(max_length=200)
+    session_token = models.CharField(max_length=2000)

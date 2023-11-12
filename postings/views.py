@@ -1,5 +1,5 @@
 from django.db import IntegrityError
-from image.views import process_image_to_db
+from image.views import process_image_to_db, get_image_from_db
 from postings.models import Posting
 from shareumass.authorization import RequestToken, authorized, authorized_view
 from shareumass.utils import get_session_from_session_token
@@ -22,9 +22,8 @@ def validate_posting_data(params: dict):
             "price": float(params["price"]),
             "description": params["description"],
             "residential_hall": params["residential_hall"],
-            "categories": params["categories"],
+            "categories": params["categories"].split(","),
         }
-        image_data = params["image"]
         success = True
     except KeyError as e:
         error_json = JsonResponse(
@@ -77,12 +76,17 @@ class UserPosting(APIView):
         if not success:
             return error_json
 
-        success, error_json, image = process_image_to_db(posting_id=posting.id, image_data=params["image"])
+        success, error_json, image = process_image_to_db(
+            posting_id=posting.id, image_data=params["image"]
+        )
         if not success:
             posting.delete()
             return error_json
 
-        response = {"message": "posting successfully created", "posting": model_to_dict(posting)}
+        response = {
+            "message": "posting successfully created",
+            "posting": model_to_dict(posting),
+        }
         return JsonResponse(
             response,
             status=200,
@@ -105,7 +109,9 @@ class PostingsView(APIView):
         search_postings = Posting.objects.all()
 
         if "residentialHall" in params:
-            search_postings = search_postings.filter(residential_hall__icontains=params.get("residentialHall"))
+            search_postings = search_postings.filter(
+                residential_hall__icontains=params.get("residentialHall")
+            )
 
         if "categories" in params:
             search_postings = search_postings.filter(categories__overlap=params.get("categories"))
@@ -120,8 +126,13 @@ class PostingsView(APIView):
 
         return JsonResponse(
             data={
-                "message": "retrieved postings successfully",
-                "postings": [model_to_dict(result) for result in search_postings],
+                "message": "retrieved postings for logged in user",
+                "postings": [
+                    model_to_dict(result)
+                    | {"picture": get_image_from_db(result.id)}
+                    | {"sellerId": result.account.email}
+                    for result in search_postings
+                ],
             },
             status=200,
         )
