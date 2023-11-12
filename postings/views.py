@@ -64,6 +64,7 @@ class UserPosting(APIView):
     def post(self, request: HttpRequest, token: RequestToken) -> JsonResponse:
         session_token = str(token)
         success, error_json, account = get_session_from_session_token(session_token)
+
         if not success:
             return error_json
 
