@@ -148,8 +148,6 @@ class DeleteView(APIView):
         Account.objects.all().delete
         Posting.objects.all().delete()
         SessionAccount.objects.all().delete()
-        for res in Image.objects():
-            res.delete()
 
         return JsonResponse(
             data={
