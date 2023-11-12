@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from user.models import Account, SessionAccount
 
 USER_INFO = "userinfo"
@@ -23,7 +24,14 @@ def create_user_if_not_exists_and_update(token: dict) -> Account:
 
 
 def get_session_from_session_token(session_token: str) -> SessionAccount | None:
+    success, error_json, account = True, None, None
     sessions = SessionAccount.objects.filter(session_token=session_token)
     if not sessions.exists():
-        return None
-    return sessions.first().account
+        success = False
+        error_json = JsonResponse(
+            {"errors": "Account is not logged in or an invalid session token was provided"},
+            status=401,
+        )
+    else:
+        account = sessions.first().account
+    return success, error_json, account

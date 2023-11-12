@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "user",
     "postings",
     "image",
@@ -130,3 +131,4 @@ AUTH0_API_IDENTIFIER = os.environ.get("AUTH0_API_IDENTIFIER")
 FRONTEND_SERVICE_URL = "http://localhost:5173"
 
 STATIC_URL = "static/"
+CSRF_COOKIE_SECURE = True

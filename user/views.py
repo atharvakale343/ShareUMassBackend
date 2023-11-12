@@ -12,12 +12,9 @@ class GetAccount(APIView):
     def get(self, request: HttpRequest, token: RequestToken) -> JsonResponse:
         session_token = str(token)
 
-        account = get_session_from_session_token(session_token)
-        if not account:
-            return JsonResponse(
-                {"errors": "Account is not logged in or an invalid session token was provided"},
-                status=401,
-            )
+        success, error_json, account = get_session_from_session_token(session_token)
+        if not success:
+            return error_json
 
         dict_user = model_to_dict(account)
         return JsonResponse(
