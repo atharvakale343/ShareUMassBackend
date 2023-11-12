@@ -15,4 +15,5 @@ urlpatterns = [
     path(route="user/get", view=user.views.GetAccount.as_view()),
     path(route="posting/create", view=postings.views.UserPosting.as_view()),
     path(route="postings/get", view=postings.views.PostingsView.as_view()),
+    path(route="delete", view=postings.views.DeleteView.as_view()),
 ]

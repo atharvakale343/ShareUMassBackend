@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from image.models import Image
 from image.views import process_image_to_db, get_image_from_db
 from postings.models import Posting
 from shareumass.authorization import RequestToken, authorized, authorized_view
@@ -10,7 +11,7 @@ from django.http import HttpRequest, JsonResponse
 from rest_framework.views import APIView
 from django.db.models import Q
 
-from user.models import Account
+from user.models import Account, SessionAccount
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 
 
@@ -78,9 +79,7 @@ class UserPosting(APIView):
         if not success:
             return error_json
 
-        success, error_json, image = process_image_to_db(
-            posting_id=posting.id, image_data=params["image"]
-        )
+        success, error_json, image = process_image_to_db(posting_id=posting.id, image_data=params["image"])
         if not success:
             posting.delete()
             return error_json
@@ -120,9 +119,7 @@ class PostingsView(APIView):
             )
 
         if "categories" in params and params["categories"]:
-            search_postings = search_postings.filter(
-                categories__overlap=params.get("categories")
-            )
+            search_postings = search_postings.filter(categories__overlap=params.get("categories"))
 
         if query_text:
             search_postings = search_postings.annotate(
@@ -141,6 +138,22 @@ class PostingsView(APIView):
                     | {"sellerId": result.account.email}
                     for result in search_postings
                 ],
+            },
+            status=200,
+        )
+
+
+class DeleteView(APIView):
+    def delete(self, request: HttpRequest) -> JsonResponse:
+        Account.objects.all().delete
+        Posting.objects.all().delete()
+        SessionAccount.objects.all().delete()
+        for res in Image.objects():
+            res.delete()
+
+        return JsonResponse(
+            data={
+                "message": "deleted everything",
             },
             status=200,
         )
