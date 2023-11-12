@@ -8,6 +8,7 @@ from shareumass.utils import get_session_from_session_token
 from django.forms import model_to_dict
 from django.http import HttpRequest, JsonResponse
 from rest_framework.views import APIView
+from django.db.models import Q
 
 from user.models import Account
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
@@ -76,7 +77,9 @@ class UserPosting(APIView):
         if not success:
             return error_json
 
-        success, error_json, image = process_image_to_db(posting_id=posting.id, image_data=params["image"])
+        success, error_json, image = process_image_to_db(
+            posting_id=posting.id, image_data=params["image"]
+        )
         if not success:
             posting.delete()
             return error_json
@@ -103,8 +106,12 @@ class PostingsView(APIView):
 
         user_flag = params.get("user", False)
         query_text = params.get("queryText", None)
+        exlude_user = params.get("excludeUser", True)
 
         search_postings = Posting.objects.all()
+
+        if exlude_user:
+            search_postings = search_postings.filter(~Q(account=account))
 
         if "residentialHall" in params and params["residentialHall"]:
             search_postings = search_postings.filter(
@@ -112,7 +119,9 @@ class PostingsView(APIView):
             )
 
         if "categories" in params and params["categories"]:
-            search_postings = search_postings.filter(categories__overlap=params.get("categories"))
+            search_postings = search_postings.filter(
+                categories__overlap=params.get("categories")
+            )
 
         if query_text:
             search_postings = search_postings.annotate(
