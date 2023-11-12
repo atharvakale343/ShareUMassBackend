@@ -91,48 +91,36 @@ class UserPosting(APIView):
 
 class PostingsView(APIView):
     @authorized_view
-    def get(self, request: HttpRequest, token: RequestToken) -> JsonResponse:
+    def post(self, request: HttpRequest, token: RequestToken) -> JsonResponse:
         session_token = str(token)
         success, error_json, account = get_session_from_session_token(session_token)
         if not success:
             return error_json
 
-        params = request.GET
+        params = request.data
 
         user_flag = params.get("user", False)
-
-        # Get all params provided
-        search_params = {
-            "residential_hall": params.get("residentialHall", None),
-            "categories": params.get("categories", None),
-        }
-        search_vector_keys = [key for key in search_params if search_params[key]]
         query_text = params.get("queryText", None)
-        if query_text:
-            search_vector_keys.extend(["product_name", "description"])
-
-        search_query_values = [value for key, value in search_params.items() if search_params[key]]
-        if query_text:
-            search_query_values.append(query_text)
 
         search_postings = Posting.objects.all()
 
-        if search_vector_keys:
-            vector = SearchVector(*search_vector_keys)
+        if "residentialHall" in params:
+            search_postings = search_postings.filter(residential_hall__icontains=params.get("residentialHall"))
 
-            query = SearchQuery("")
+        if "categories" in params:
+            search_postings = search_postings.filter(categories__overlap=params.get("categories"))
 
-            for value in search_query_values:
-                query = query & SearchQuery(value)
-
-            search_postings = search_postings.annotate(rank=SearchRank(vector, query)).order_by("-rank")
+        if query_text:
+            search_postings = search_postings.annotate(
+                search=SearchVector(*["product_name", "description"])
+            ).filter(search=query_text)
 
         if user_flag:
             search_postings = search_postings.filter(account=account)
 
         return JsonResponse(
             data={
-                "message": "retrieved postings for logged in user",
+                "message": "retrieved postings successfully",
                 "postings": [model_to_dict(result) for result in search_postings],
             },
             status=200,

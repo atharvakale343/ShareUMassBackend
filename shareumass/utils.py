@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from user.models import Account, SessionAccount
+from django.db import transaction
 
 USER_INFO = "userinfo"
 
@@ -12,8 +13,9 @@ def create_user_if_not_exists_and_update(token: dict) -> Account:
 
     accounts = Account.objects.filter(email=email)
     if not accounts.exists():
-        account = Account.objects.create_user(email=email, name=name, picture_url=picture_url)
-        SessionAccount.objects.create(account=account, session_token=session_token)
+        with transaction.atomic():
+            account = Account.objects.create_user(email=email, name=name, picture_url=picture_url)
+            SessionAccount.objects.create(account=account, session_token=session_token)
         return account
 
     account = accounts.first()
