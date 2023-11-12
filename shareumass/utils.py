@@ -19,9 +19,7 @@ def create_user_if_not_exists_and_update(token: dict) -> Account:
         return account
 
     account = accounts.first()
-    session = SessionAccount.objects.filter(account=account).first()
-    session.session_token = session_token
-    session.save()
+    session = SessionAccount.objects.update_or_create(account=account, session_token=session_token)
     return account
 
 
