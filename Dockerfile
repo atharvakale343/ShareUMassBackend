@@ -1,17 +1,18 @@
-FROM python:3.12
+FROM python:3.11-slim-buster
 
-WORKDIR /home/app
+ENV PIP_DISABLE_PIP_VERSION_CHECK 1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-#If we add the requirements and install dependencies first, docker can use cache if requirements don't change
-ADD requirements.txt /home/app
-RUN pip install -r requirements.txt
-# RUN pip install --no-cache-dir -r requirements.txt
+WORKDIR /code
 
-ADD . /home/app
+RUN apt update -y 
+RUN apt-get install libpq-dev python3-dev -y
 
-# Migrate the database
-RUN python manage.py migrate
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
 
-CMD python manage.py runserver 0.0.0.0:3000
+COPY . .
+EXPOSE 8080
 
-EXPOSE 3000
+CMD [ "./local_exec.sh" ]

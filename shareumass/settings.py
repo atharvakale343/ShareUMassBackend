@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "user",
     "postings",
+    "image"
 ]
 
 MIDDLEWARE = [
@@ -67,9 +68,18 @@ WSGI_APPLICATION = "shareumass.wsgi.application"
 
 DATABASES = {
     "default": {
+        "NAME": "app_data",
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
-    }
+    },
+    "images": {
+        "ENGINE": "djongo",
+        "NAME": "images_data",
+        "ENFORCE_SCHEMA": False,
+        "CLIENT": {
+            "host": "mongodb+srv://lifewhiz:strongpass@cluster0.txfh8kh.mongodb.net/?retryWrites=true&w=majority"
+        },
+    },
 }
 
 
