@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "user",
     "postings",
-    "image"
+    "image",
 ]
 
 MIDDLEWARE = [
@@ -68,9 +68,11 @@ WSGI_APPLICATION = "shareumass.wsgi.application"
 
 DATABASES = {
     "default": {
-        "NAME": "app_data",
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "HOST": "localhost",
+        "PASSWORD": os.getenv("PGPASSWORD", "mypass"),
     },
     "images": {
         "ENGINE": "djongo",
