@@ -22,9 +22,8 @@ def validate_posting_data(params: dict):
             "price": float(params["price"]),
             "description": params["description"],
             "residential_hall": params["residential_hall"],
-            "categories": params["categories"],
+            "categories": params["categories"].split(","),
         }
-        image_data = params["image"]
         success = True
     except KeyError as e:
         error_json = JsonResponse(
@@ -95,12 +94,12 @@ class UserPosting(APIView):
 
 
 class PostingsView(APIView):
-    # @authorized_view
-    def get(self, request: HttpRequest):  # , token: RequestToken) -> JsonResponse:
-        # session_token = str(token)
-        # success, error_json, account = get_session_from_session_token(session_token)
-        # if not success:
-        #     return error_json
+    @authorized_view
+    def get(self, request: HttpRequest, token: RequestToken) -> JsonResponse:
+        session_token = str(token)
+        success, error_json, account = get_session_from_session_token(session_token)
+        if not success:
+            return error_json
 
         params = request.GET
 
@@ -143,7 +142,9 @@ class PostingsView(APIView):
             data={
                 "message": "retrieved postings for logged in user",
                 "postings": [
-                    model_to_dict(result) | {"picture": get_image_from_db(result.id)}
+                    model_to_dict(result)
+                    | {"picture": get_image_from_db(result.id)}
+                    | {"sellerId": result.account.email}
                     for result in search_postings
                 ],
             },
