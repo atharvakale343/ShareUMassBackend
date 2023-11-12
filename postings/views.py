@@ -76,9 +76,7 @@ class UserPosting(APIView):
         if not success:
             return error_json
 
-        success, error_json, image = process_image_to_db(
-            posting_id=posting.id, image_data=params["image"]
-        )
+        success, error_json, image = process_image_to_db(posting_id=posting.id, image_data=params["image"])
         if not success:
             posting.delete()
             return error_json
