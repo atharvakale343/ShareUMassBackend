@@ -1,5 +1,7 @@
 from django.urls import path
 
+import user.views
+
 from . import views
 
 urlpatterns = [
@@ -9,5 +11,5 @@ urlpatterns = [
     path("callback", views.callback, name="callback"),
     path(route="api/public", view=views.public, name="public"),
     path(route="api/private", view=views.private, name="private"),
-    path(route="api/private-scoped", view=views.privateScoped, name="private_scoped"),
+    path(route="user/get", view=user.views.GetAccount.as_view()),
 ]

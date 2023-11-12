@@ -22,6 +22,19 @@ def authorized(function):
     return wrap
 
 
+def authorized_view(function):
+    @wraps(function)
+    def wrap(self, request: HttpRequest, *args, **kwargs):
+        token: RequestToken = getRequestToken(request, mutateRequest=True)
+
+        if token is None or token.isAuthorized() is False:
+            raise JsonException("Unauthorized.", 401)
+
+        return function(self, request, token, *args, **kwargs)
+
+    return wrap
+
+
 def can(permission):
     def decor(function):
         @wraps(function)
@@ -68,15 +81,11 @@ class RequestToken(object):
         issuer: str = "https://{}/".format(domain)
 
         signingKey: Any = (
-            PyJWKClient(issuer + ".well-known/jwks.json")
-            .get_signing_key_from_jwt(self._token)
-            .key
+            PyJWKClient(issuer + ".well-known/jwks.json").get_signing_key_from_jwt(self._token).key
         )
 
         if signingKey is None:
-            raise JsonException(
-                "Could not retrieve a matching public key for the provided token.", 400
-            )
+            raise JsonException("Could not retrieve a matching public key for the provided token.", 400)
 
         try:
             return decode(
@@ -86,8 +95,8 @@ class RequestToken(object):
                 audience=identifier,
                 issuer=issuer,
             )
-        except Exception as e:
-            raise e
+        except:
+            raise JsonException("Could not decode the provided token.", 400)
 
     def __str__(self) -> str:
         return self._token
@@ -108,20 +117,15 @@ class RequestToken(object):
         return self._decoded if self._decoded is not None else {}
 
 
-def getRequestToken(
-    request: HttpRequest, mutateRequest: bool = False
-) -> RequestToken | dict:
+def getRequestToken(request: HttpRequest, mutateRequest: bool = False) -> RequestToken | dict:
     bearerToken: str | None = request.headers.get("Authorization")
 
     if bearerToken is None or not bearerToken.startswith("Bearer "):
-        return None
+        return {}
 
     bearerToken = bearerToken.partition(" ")[2]
 
-    if (
-        request.META.get("token") is not None
-        and request.META.get("bearerToken") == bearerToken
-    ):
+    if request.META.get("token") is not None and request.META.get("bearerToken") == bearerToken:
         return request.META.get("token")
 
     token: RequestToken = RequestToken(bearerToken)

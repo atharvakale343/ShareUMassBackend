@@ -5,9 +5,11 @@ from django.shortcuts import redirect, render, redirect
 from django.urls import reverse
 from urllib.parse import quote_plus, urlencode
 
-from shareumass.utils import create_user_if_not_exists
+from shareumass.utils import create_user_if_not_exists_and_update
+from user.models import Account, SessionAccount
 from .authorization import RequestToken, authorized, can, getRequestToken
 from django.http import HttpRequest, JsonResponse
+
 
 oauth = OAuth()
 
@@ -37,8 +39,8 @@ def callback(request):
     token = oauth.auth0.authorize_access_token(request)
     request.session["user"] = token
 
-    email = token["email"]
-    create_user_if_not_exists(token)
+    email = token["userinfo"]["email"]
+    create_user_if_not_exists_and_update(token)
     return redirect(f"{settings.FRONTEND_SERVICE_URL}?token={token['id_token']}&email={email}")
 
 
@@ -76,16 +78,6 @@ def private(request: HttpRequest, token: RequestToken) -> JsonResponse:
     return JsonResponse(
         data={
             "message": "Hello from a private endpoint! You need to be authenticated to see this.",
-            "token": token.dict(),
-        }
-    )
-
-
-@can("read:messages")
-def privateScoped(request: HttpRequest, token: RequestToken) -> JsonResponse:
-    return JsonResponse(
-        data={
-            "message": "Hello from a private endpoint! You need to be authenticated and have a scope of read:messages to see this.",
             "token": token.dict(),
         }
     )
